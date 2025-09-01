@@ -1,0 +1,69 @@
+[versions]
+spring-boot = "3.5.0"
+spring-dependency-management = "1.1.7"
+liquibase-gradle = "2.2.2"
+kotlin = "2.1.21"
+liquibase-hibernate = "4.33.0"
+liquibase-core = "4.27.0"
+picocli = "4.7.5"
+postgresql = "42.7.3"
+snakeyaml = "2.2"
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+liquibase = { id = "org.liquibase.gradle", version.ref = "liquibase-gradle" }
+
+[libraries]
+# Spring Boot (필수만 유지)
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+
+# Kotlin
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+
+# DB
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+
+# Build-logic용
+liquibase-gradle-plugin = { module = "org.liquibase:liquibase-gradle-plugin", version.ref = "liquibase-gradle" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+
+## Liquibase Runtime
+liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase-core" }
+liquibase-hibernate6 = { module = "org.liquibase.ext:liquibase-hibernate6", version.ref = "liquibase-hibernate" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+
+[bundles]
+# Kotlin 기본
+kotlin-basic = [
+    "kotlin-reflect",
+    "kotlin-stdlib"
+]
+
+# Spring Boot 최소
+spring-boot-core = [
+    "spring-boot-starter"
+]
+
+# Spring Boot 데이터 액세스
+spring-boot-data = [
+    "spring-boot-starter-data-jpa"
+]
+
+# build-logic에서 사용하는 의존성 번들
+build-logic = [
+    "liquibase-gradle-plugin",
+    "snakeyaml"
+]
+
+
+
+
+
+
+
