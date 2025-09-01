@@ -1,15 +1,16 @@
 ## spring-liquibase workflow
 
-This repository is a template/sample to use Liquibase consistently in a Gradle multi-project. Custom Gradle tasks handle changelog initialization, migration generation from entity diffs, and automatic include management.
+This repository is a template/sample to use Liquibase consistently in a Gradle multi-project.  
+Custom Gradle tasks handle changelog initialization, migration generation from entity diffs, and automatic include management.
 
 ### Versions
 
 - Gradle: 8.14.x
-- Spring Boot: 3.5.x (see root `build.gradle.kts`)
-- Kotlin: 2.0.x
+- Spring Boot: 3.5.0
+- Kotlin: 2.1.21
 - Liquibase Gradle Plugin: 2.2.2
 - Liquibase Hibernate: 4.33.0
-- Java: 17
+- Java: 21
 
 ---
 
@@ -17,6 +18,7 @@ This repository is a template/sample to use Liquibase consistently in a Gradle m
 
 - Main (aggregate) module: `:main`
 - Example module: `:example`
+- Build logic module: `:build-logic` (Liquibase 커스텀 플러그인)
 
 Each module keeps its own changelog:
 
@@ -34,6 +36,7 @@ Generated migration filename convention:
 Project inclusion:
 
 - `settings.gradle.kts` automatically includes subprojects under the root that contain a `build.gradle.kts` file.
+- Liquibase custom tasks are provided by the `:build-logic` module via the `dev.ian.gradle.liquibase-convention` plugin.
 
 ---
 
@@ -41,10 +44,14 @@ Project inclusion:
 
 ### 1) Select the main module
 
-Set the main module name in the root `gradle.properties`:
+Set the **main module name** and **database connection properties** in the root `gradle.properties`:
 
 ```properties
-mainProjectName=main
+MAIN_PROJECT_NAME=main
+DATASOURCE_URL=jdbc:postgresql://localhost:5432/
+DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+DATASOURCE_USERNAME=postgres
+DATASOURCE_PASSWORD=postgres
 ```
 
 The main module aggregates includes from all enabled modules.
@@ -65,46 +72,19 @@ Examples:
 
 You can also enable temporarily via CLI: `-PliquibaseEnabled=true`.
 
-### 3) Database connection properties
-
-Defaults are read from the root `application.properties`:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/example
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-spring.datasource.driver-class-name=org.postgresql.Driver
-```
-
-Override at runtime using JVM system properties:
-
-```bash
-./gradlew :example:generateMigration \
-  -Dliquibase.url=jdbc:postgresql://localhost:5432/example \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  -Dliquibase.driver=org.postgresql.Driver
-```
-
-Note: custom tasks do not read environment variables directly. Use system properties as shown above if you need overrides.
-
----
-
 ## How it works
 
-When Liquibase is enabled on a module, the build applies the Liquibase plugin and configures a `main` activity:
+When Liquibase is enabled on a module, the build applies the Liquibase plugin via the custom `dev.ian.gradle.liquibase-convention` plugin from the `:build-logic` module and configures a `main` activity:
 
 - `changeLogFile`: `db.changelog-main.yml` for the main module, or `db.changelog-<module>.yml` for other modules
-- `searchPath`: root + module changelog dirs. The main module includes all enabled modules’ changelog directories to support cross-module includes
+- `searchPath`: root + module changelog dirs. The main module includes all enabled modules' changelog directories to support cross-module includes
 
 Custom tasks orchestrate the workflow:
 
 - `initMigration`: creates changelog files and the `migrations` folder (for non-main modules)
 - `generateMigration`: runs Liquibase+Hibernate to generate a new migration from your entity package
-- `appendMigrationInclude`: appends an include entry for the generated file into the module changelog
-- `appendMainInclude`: for non-main modules, appends the module changelog into the main aggregate changelog
 
-All tasks print `[INFO]` and `[ERROR]` logs for clarity.
+The custom Liquibase tasks are implemented in the `:build-logic` module and use Version Catalog (`gradle/libs.versions.toml`) for dependency management.
 
 ---
 
@@ -193,17 +173,11 @@ System property overrides:
 ### Liquibase tasks are not visible on my module
 
 - Ensure `liquibaseEnabled=true` in the module’s `gradle.properties` (or pass `-PliquibaseEnabled=true`)
-- Ensure `mainProjectName` is set in the root `gradle.properties`
+- Ensure `MAIN_PROJECT_NAME` is set in the root `gradle.properties`
 
 ### Connection/authentication issues
 
-- Check the root `application.properties`
-- Override via `-Dliquibase.url`, `-Dliquibase.username`, `-Dliquibase.password`, `-Dliquibase.driver`
-
-### Generated file not included
-
-- `appendMigrationInclude` runs automatically as a finalizer of `generateMigration`
-- Look for `[INFO] Ensured include ...` in logs
+- Ensure `DATASOURCE_URL`, `DATASOURCE_DRIVER_CLASS_NAME`, `DATASOURCE_USERNAME`, `DATASOURCE_PASSWORD` are set properly in the root `gradle.properties`
 
 ### Include resolution issues
 
@@ -226,27 +200,26 @@ docker exec spring-liquibase-db psql -U postgres -c "CREATE DATABASE example;"
 
 ```properties
 # gradle.properties (root)
-mainProjectName=main
-
-# application.properties (root)
-spring.datasource.url=jdbc:postgresql://localhost:5432/example
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-spring.datasource.driver-class-name=org.postgresql.Driver
+MAIN_PROJECT_NAME=main
+DATASOURCE_URL=jdbc:postgresql://localhost:5432/
+DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+DATASOURCE_USERNAME=postgres
+DATASOURCE_PASSWORD=postgres
 
 # example/gradle.properties
 liquibaseEnabled=true
 liquibaseEntityPackage=dev.ian.example.domain.entities
 ```
 
-3) (Optional) Generate migration
+3) Generate migration
 
 ```bash
+# generateMigration also initialize migration change log and generate migration file.
 ./gradlew :example:generateMigration -Pdesc=init-schema
 ```
 
 4) Apply
 
 ```bash
-./gradlew :main:update
+./gradlew :example:update
 ```
