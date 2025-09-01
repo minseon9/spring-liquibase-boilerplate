@@ -1,27 +1,21 @@
-package buildsrc.liquibase
+package dev.ian.gradle.liquibase.tasks
 
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.logging.Logger
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.io.File
 
-abstract class AppendIncludeTask : DefaultTask() {
-    @Input
-    lateinit var targetChangelogPath: String
-
-    // 일반화: 전체 include 경로를 전달 (예: migrations/xxx.yml 혹은 ../../../module/...yml)
-    @Input
-    lateinit var includeFilePath: String
-
-    @TaskAction
-    fun run() {
+object MigrationPathAppender {
+    fun append(
+        changelogPath: String,
+        pathToAppend: String,
+        logger: Logger,
+    ) {
         try {
-            val file = File(targetChangelogPath)
+            val file = File(changelogPath)
             if (!file.exists()) {
                 file.parentFile.mkdirs()
                 file.writeText("databaseChangeLog:\n")
@@ -37,12 +31,12 @@ abstract class AppendIncludeTask : DefaultTask() {
                     else -> mutableListOf()
                 }
 
-            val includeMap = mapOf("include" to mapOf("file" to includeFilePath))
+            val includeMap = mapOf("include" to mapOf("file" to pathToAppend))
             val already =
                 list.any {
                     (it as? Map<*, *>)
                         ?.get("include")
-                        ?.let { inc -> (inc as? Map<*, *>)?.get("file") == includeFilePath } == true
+                        ?.let { inc -> (inc as? Map<*, *>)?.get("file") == pathToAppend } == true
                 }
             if (!already) list.add(includeMap)
 
@@ -55,9 +49,9 @@ abstract class AppendIncludeTask : DefaultTask() {
 
             val dumper = Yaml(dumpOpt)
             file.writeText(dumper.dump(newRoot))
-            println("[INFO] Ensured include for '$includeFilePath' in ${file.absolutePath}")
+            logger.lifecycle("Ensured include for '$pathToAppend' in ${file.path}")
         } catch (e: Exception) {
-            println("[ERROR] Changelog include 추가 실패: ${e.message}")
+            logger.error("Changelog include 추가 실패: ${e.message}")
             throw GradleException("Changelog include 추가 실패", e)
         }
     }
