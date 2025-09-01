@@ -1,3 +1,5 @@
+name: spring-liquibase
+
 services:
   db:
     container_name: spring-liquibase-db
