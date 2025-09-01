@@ -33,10 +33,8 @@ class LiquibaseConventionPlugin : Plugin<Project> {
                 .pluginId,
         )
 
-        // 기존 의존성 추가 로직 - libs 카탈로그 사용
         project.dependencies.apply {
             add("liquibaseRuntime", libs.findLibrary("spring.boot.starter.data.jpa").get())
-//            add("liquibaseRuntime", libs.findLibrary("spring.context").get())
             add("liquibaseRuntime", libs.findLibrary("liquibase.core").get())
             add("liquibaseRuntime", libs.findLibrary("liquibase.hibernate6").get())
             add("liquibaseRuntime", libs.findLibrary("postgresql").get())
@@ -51,7 +49,6 @@ class LiquibaseConventionPlugin : Plugin<Project> {
             )
         }
 
-        // 기존 LiquibaseConfig.configureLiquibase 로직 적용
         LiquibaseConfig.configureLiquibase(project)
     }
 }
