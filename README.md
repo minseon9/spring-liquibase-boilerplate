@@ -1,225 +1,88 @@
-## spring-liquibase workflow
+## Spring Boot & Liquibase Boilerplate
 
-This repository is a template/sample to use Liquibase consistently in a Gradle multi-project.  
-Custom Gradle tasks handle changelog initialization, migration generation from entity diffs, and automatic include management.
+Gradle 멀티모듈 프로젝트에서 Liquibase를 일관되게 사용하기 위한 템플릿입니다.  
+커스텀 Gradle 태스크가 changelog 초기화, 엔티티 diff 기반 마이그레이션 생성, 자동 include 관리를 처리합니다.
 
-### Versions
+### 환경 
 
-- Gradle: 8.14.x
-- Spring Boot: 3.5.0
-- Kotlin: 2.1.21
-- Liquibase Gradle Plugin: 2.2.2
-- Liquibase Hibernate: 4.33.0
-- Java: 21
+- **Gradle**: 8.14.x
+- **Spring Boot**: 3.5.0
+- **Kotlin**: 2.1.21
+- **Liquibase Gradle Plugin**: 2.2.2
+- **Liquibase Hibernate**: 4.33.0
+- **Java**: 21
 
----
+### 프로젝트 구조
 
-## Project structure
+- **루트 프로젝트**: Liquibase 플러그인으로 마이그레이션을 중앙에서 관리
+  - `schema/db.changelog.yml`: 모든 모듈의 마이그레이션을 통합
+- **서브모듈**: `main`, `order`, `product` 등 각 도메인별 모듈
+  - 각 모듈별 마이그레이션: `{module}/src/main/resources/db/changelog/migrations/`
+- **빌드 로직**: `:build-logic` (Liquibase 커스텀 플러그인)
+  - JPA 엔티티를 자동으로 스캔하여 `includeObjects` 생성
+  - target module의 entity 외의 다른 module의 변경사항은 무시
 
-- Main (aggregate) module: `:main`
-- Example module: `:example`
-- Build logic module: `:build-logic` (Liquibase 커스텀 플러그인)
+**마이그레이션 파일 명명 규칙**:
+- `<timestamp>-<desc>-changelog-<module>.yml` (예: `1754663326307-change-changelog-example.yml`)
+`desc`는 cli에서 -pDesc 옵션으로 받아 사용하며, 기본값으로 `change`을 사용
 
-Each module keeps its own changelog:
+### 설정
 
-- `src/main/resources/db/changelog/db.changelog-<module>.yml`
-- `src/main/resources/db/changelog/migrations/` (auto-created for non-main modules)
-
-Main aggregate changelog:
-
-- `main/src/main/resources/db/changelog/db.changelog-main.yml`
-
-Generated migration filename convention:
-
-- `<timestamp>-<desc>-changelog-<module>.yml` (e.g., `1754663326307-change-changelog-example.yml`)
-
-Project inclusion:
-
-- `settings.gradle.kts` automatically includes subprojects under the root that contain a `build.gradle.kts` file.
-- Liquibase custom tasks are provided by the `:build-logic` module via the `dev.ian.gradle.liquibase-convention` plugin.
-
----
-
-## Setup
-
-### 1) Select the main module
-
-Set the **main module name** and **database connection properties** in the root `gradle.properties`:
+**루트 `gradle.properties`에 데이터베이스 연결 정보 설정**:
 
 ```properties
-MAIN_PROJECT_NAME=main
 DATASOURCE_URL=jdbc:postgresql://localhost:5432/
 DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 DATASOURCE_USERNAME=postgres
 DATASOURCE_PASSWORD=postgres
 ```
 
-The main module aggregates includes from all enabled modules.
+### 명령어
 
-### 2) Enable Liquibase per module (opt-in)
-
-Enable in each module’s `gradle.properties`:
-
-```properties
-liquibaseEnabled=true
-liquibaseEntityPackage=<entity root package>
-```
-
-Examples:
-
-- `main/gradle.properties` → `liquibaseEntityPackage=dev.ian`
-- `example/gradle.properties` → `liquibaseEntityPackage=dev.ian.example.domain.entities`
-
-You can also enable temporarily via CLI: `-PliquibaseEnabled=true`.
-
-## How it works
-
-When Liquibase is enabled on a module, the build applies the Liquibase plugin via the custom `dev.ian.gradle.liquibase-convention` plugin from the `:build-logic` module and configures a `main` activity:
-
-- `changeLogFile`: `db.changelog-main.yml` for the main module, or `db.changelog-<module>.yml` for other modules
-- `searchPath`: root + module changelog dirs. The main module includes all enabled modules' changelog directories to support cross-module includes
-
-Custom tasks orchestrate the workflow:
-
-- `initMigration`: creates changelog files and the `migrations` folder (for non-main modules)
-- `generateMigration`: runs Liquibase+Hibernate to generate a new migration from your entity package
-
-The custom Liquibase tasks are implemented in the `:build-logic` module and use Version Catalog (`gradle/libs.versions.toml`) for dependency management.
-
----
-
-## Quickstart
-
-### 0) Prerequisites to run the example as-is
-
-- PostgreSQL running locally on port 5432
-- Database `example` exists
-  - e.g., `psql -U postgres -c "CREATE DATABASE example;"`
-- Credentials: `postgres / postgres` (update `application.properties` if needed)
-
-### 1) Verify settings
-
-- Root `gradle.properties`: `mainProjectName=main`
-- Root `application.properties`: confirm the DB connection above
-- `main/gradle.properties`, `example/gradle.properties`: confirm `liquibaseEnabled=true` and `liquibaseEntityPackage`
-
-### 2) Initialize changelog scaffolding (if needed)
-
+**기본 명령어**:
 ```bash
-./gradlew :example:initMigration
+# 마이그레이션 초기화
+./gradlew :{module}:initMigration
+
+# 엔티티 기반 마이그레이션 생성
+./gradlew :{module}:generateMigration -Pdesc=설명 -Pmodule={module}
+
+# liquibase 기본 명령어
+## 마이그레이션 적용 (중앙 changelog 사용)
+./gradlew update
+
+## SQL 미리보기
+./gradlew updateSql
+
+## 상태 확인
+./gradlew status
 ```
 
-### 3) Generate migration from entities (optional)
+### 빠른 시작
 
+**1) 데이터베이스 준비**:
 ```bash
-./gradlew :example:generateMigration -Pdesc=init-schema
+# Docker로 PostgreSQL 실행
+docker compose up -d
 ```
 
-### 4) Apply migrations
-
-Choose one:
-
+**2) 마이그레이션 생성 및 적용**:
 ```bash
-# Aggregate apply from the main module (recommended)
-./gradlew :main:update
+# 마이그레이션 생성 (엔티티 스캔 → diff 생성)
+./gradlew generateMigration -Pmodule=order -Pdesc=init-schema
 
-# Apply only the example module
-./gradlew :example:update
+# 마이그레이션 적용
+./gradlew update
 ```
 
----
-
-## Command reference
-
+**3) 전체 워크플로우**:
 ```bash
-# List all tasks (root)
-./gradlew tasks
+# 1. 마이그레이션 초기화
+./gradlew initMigration -Pmodule=order
 
-# List tasks for a module
-./gradlew :example:tasks --all
+# 2. 엔티티 변경사항을 마이그레이션으로 생성
+./gradlew generateMigration -Pmodule=order -Pdesc=add-user-table
 
-# Initialize changelog scaffolding
-./gradlew :example:initMigration
-
-# Generate migration (with descriptor)
-./gradlew :example:generateMigration -Pdesc=add-columns
-
-# Apply from main / module
-./gradlew :main:update
-./gradlew :example:update
-
-# Dry-run SQL
-./gradlew :example:updateSql
-
-# Status / validate
-./gradlew :example:status
-./gradlew :example:validate
-```
-
-System property overrides:
-
-```bash
-./gradlew :example:update \
-  -Dliquibase.url=jdbc:postgresql://localhost:5432/example \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  -Dliquibase.driver=org.postgresql.Driver
-```
-
----
-
-## Troubleshooting
-
-### Liquibase tasks are not visible on my module
-
-- Ensure `liquibaseEnabled=true` in the module’s `gradle.properties` (or pass `-PliquibaseEnabled=true`)
-- Ensure `MAIN_PROJECT_NAME` is set in the root `gradle.properties`
-
-### Connection/authentication issues
-
-- Ensure `DATASOURCE_URL`, `DATASOURCE_DRIVER_CLASS_NAME`, `DATASOURCE_USERNAME`, `DATASOURCE_PASSWORD` are set properly in the root `gradle.properties`
-
-### Include resolution issues
-
-- The main module’s `searchPath` includes all enabled modules’ changelog directories
-- Verify relative include paths are correct
-
----
-
-## End-to-end example
-
-1) Prepare DB
-
-```bash
-docker compose up -d 
-
-docker exec spring-liquibase-db psql -U postgres -c "CREATE DATABASE example;"
-```
-
-2) Verify settings
-
-```properties
-# gradle.properties (root)
-MAIN_PROJECT_NAME=main
-DATASOURCE_URL=jdbc:postgresql://localhost:5432/
-DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
-DATASOURCE_USERNAME=postgres
-DATASOURCE_PASSWORD=postgres
-
-# example/gradle.properties
-liquibaseEnabled=true
-liquibaseEntityPackage=dev.ian.example.domain.entities
-```
-
-3) Generate migration
-
-```bash
-# generateMigration also initialize migration change log and generate migration file.
-./gradlew :example:generateMigration -Pdesc=init-schema
-```
-
-4) Apply
-
-```bash
-./gradlew :example:update
+# 3. 모든 모듈의 마이그레이션을 중앙에서 적용
+./gradlew update
 ```
