@@ -1,7 +1,6 @@
 package dev.ian.gradle.liquibase
 
 import dev.ian.gradle.liquibase.config.LiquibaseConfig
-import dev.ian.gradle.liquibase.constants.LiquibaseConstants
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
@@ -10,17 +9,6 @@ import org.gradle.kotlin.dsl.getByType
 
 class LiquibaseConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val liquibaseEnabled =
-            project
-                .findProperty(LiquibaseConstants.LIQUIBASE_ENABLED_PROPERTY)
-                ?.toString()
-                ?.toBoolean() ?: false
-
-        if (!liquibaseEnabled) {
-            project.logger.info("Liquibase is disabled for ${project.name}")
-            return
-        }
-
         val libs =
             project.rootProject.extensions
                 .getByType<VersionCatalogsExtension>()
@@ -39,9 +27,13 @@ class LiquibaseConventionPlugin : Plugin<Project> {
             add("liquibaseRuntime", libs.findLibrary("liquibase.hibernate6").get())
             add("liquibaseRuntime", libs.findLibrary("postgresql").get())
             add("liquibaseRuntime", libs.findLibrary("picocli").get())
+
+            val targetModule = project.findProperty("module") as String? ?: "main"
+            val targetProject = project.rootProject.project(":$targetModule")
+            targetProject.plugins.apply("java")
             add(
                 "liquibaseRuntime",
-                project.extensions
+                targetProject.extensions
                     .getByType<JavaPluginExtension>()
                     .sourceSets
                     .getByName("main")

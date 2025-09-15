@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.spring) apply false
     alias(libs.plugins.kotlin.jpa) apply false
 
-    id("dev.ian.gradle.liquibase-convention") apply false
+    id("dev.ian.gradle.liquibase-convention")
 }
 
 allprojects {
@@ -38,8 +38,6 @@ subprojects {
     apply(plugin = "kotlin-jpa")
     apply(plugin = "org.springframework.boot")
     apply(plugin = "io.spring.dependency-management")
-
-    apply(plugin = "dev.ian.gradle.liquibase-convention")
 
     tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
         enabled = false

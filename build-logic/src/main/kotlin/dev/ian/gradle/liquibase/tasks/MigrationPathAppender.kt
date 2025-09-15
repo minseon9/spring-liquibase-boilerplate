@@ -9,9 +9,9 @@ import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.io.File
 
 object MigrationPathAppender {
-    fun append(
+    fun appendIncludeAll(
         changelogPath: String,
-        pathToAppend: String,
+        modulePath: String,
         logger: Logger,
     ) {
         try {
@@ -25,34 +25,43 @@ object MigrationPathAppender {
             val content = file.readText().ifBlank { "databaseChangeLog:\n" }
             val root = (yaml.load<Any>(content) as? Map<*, *>)?.toMutableMap() ?: mutableMapOf()
 
-            val list =
-                when (val v = root["databaseChangeLog"]) {
-                    is List<*> -> v.toMutableList()
-                    else -> mutableListOf()
-                }
+            val list = when (val v = root["databaseChangeLog"]) {
+                is List<*> -> v.toMutableList()
+                else -> mutableListOf()
+            }
 
-            val includeMap = mapOf("include" to mapOf("file" to pathToAppend))
-            val already =
-                list.any {
-                    (it as? Map<*, *>)
-                        ?.get("include")
-                        ?.let { inc -> (inc as? Map<*, *>)?.get("file") == pathToAppend } == true
-                }
-            if (!already) list.add(includeMap)
+            val includeAllMap = mapOf(
+                "includeAll" to mapOf(
+                    "path" to modulePath,
+                    "relativeToChangelogFile" to false,
+                    "errorIfMissingOrEmpty" to false
+                )
+            )
+
+            val already = list.any { item ->
+                (item as? Map<*, *>)
+                    ?.get("includeAll")
+                    ?.let { incAll ->
+                        (incAll as? Map<*, *>)?.get("path") == modulePath
+                    } == true
+            }
+
+            if (!already) {
+                list.add(includeAllMap)
+            }
 
             val newRoot = mutableMapOf<String, Any>("databaseChangeLog" to list)
-            val dumpOpt =
-                DumperOptions().apply {
-                    defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-                    isPrettyFlow = true
-                }
+            val dumpOpt = DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                isPrettyFlow = true
+            }
 
             val dumper = Yaml(dumpOpt)
             file.writeText(dumper.dump(newRoot))
-            logger.lifecycle("Ensured include for '$pathToAppend' in ${file.path}")
+            logger.lifecycle("Ensured includeAll for '$modulePath' in ${file.path}")
         } catch (e: Exception) {
-            logger.error("Changelog include 추가 실패: ${e.message}")
-            throw GradleException("Changelog include 추가 실패", e)
+            logger.error("Changelog includeAll 추가 실패: ${e.message}")
+            throw GradleException("Changelog includeAll 추가 실패", e)
         }
     }
 }

@@ -7,28 +7,23 @@ import java.io.File
 
 abstract class InitMigrationTask : DefaultTask() {
     @Input
-    var mainProject: Boolean = false
-
-    @Input
-    lateinit var changeLogPath: String
+    var targetModule: String? = null
 
     @Input
     lateinit var migrationsPath: String
 
     @TaskAction
     fun execute() {
-        if (!mainProject) {
-            logger.lifecycle("initMigration for module='${project.name}'")
-            val migrationsDir = File(migrationsPath)
-            migrationsDir.mkdirs()
-        }
+        logger.lifecycle("Initializing module '$targetModule' Liquibase structure")
 
-        val changelog = File(changeLogPath)
-        if (!changelog.exists()) {
-            changelog.writeText("databaseChangeLog:\n")
-            logger.lifecycle("Created module changelog: ${changelog.absolutePath}")
-        } else {
-            logger.lifecycle("Module changelog already exists: ${changelog.absolutePath}")
-        }
+        val migrationsDir = File(migrationsPath)
+        migrationsDir.mkdirs()
+
+        val schemaChangelogPath = project.rootProject.file("schema/db.changelog.yml").absolutePath
+        val modulePath = "$targetModule/src/main/resources/db/changelog/migrations"
+
+        MigrationPathAppender.appendIncludeAll(schemaChangelogPath, modulePath, logger)
+
+        logger.lifecycle("Added includeAll for module '$targetModule' to schema changelog")
     }
 }

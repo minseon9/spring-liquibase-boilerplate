@@ -1,0 +1,9 @@
+databaseChangeLog:
+- includeAll:
+    path: product/src/main/resources/db/changelog/migrations
+    relativeToChangelogFile: false
+    errorIfMissingOrEmpty: false
+- includeAll:
+    path: order/src/main/resources/db/changelog/migrations
+    relativeToChangelogFile: false
+    errorIfMissingOrEmpty: false

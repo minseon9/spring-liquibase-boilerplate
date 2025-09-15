@@ -8,6 +8,8 @@ liquibase-core = "4.27.0"
 picocli = "4.7.5"
 postgresql = "42.7.3"
 snakeyaml = "2.2"
+reflections = "0.10.2"
+jakarta-persistence = "3.1.0"
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
@@ -32,6 +34,8 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 # Build-logic용
 liquibase-gradle-plugin = { module = "org.liquibase:liquibase-gradle-plugin", version.ref = "liquibase-gradle" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
+jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api", version.ref = "jakarta-persistence" }
 
 ## Liquibase Runtime
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase-core" }
@@ -58,7 +62,9 @@ spring-boot-data = [
 # build-logic에서 사용하는 의존성 번들
 build-logic = [
     "liquibase-gradle-plugin",
-    "snakeyaml"
+    "snakeyaml",
+    "reflections",
+    "jakarta-persistence-api"
 ]
 
 
