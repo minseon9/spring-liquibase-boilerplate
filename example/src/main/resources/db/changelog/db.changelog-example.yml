@@ -1,3 +1,0 @@
-databaseChangeLog:
-- include:
-    file: migrations/1754663326307-change-changelog-example.yml

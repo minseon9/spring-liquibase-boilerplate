@@ -1,0 +1,37 @@
+databaseChangeLog:
+- changeSet:
+    id: 1757966459697-1
+    author: ian (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: orderPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: count
+            type: INTEGER
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: product_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        tableName: order
+

@@ -1,5 +1,6 @@
 dependencies {
-    implementation(project(":example"))
+    implementation(project(":order"))
+    implementation(project(":product"))
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
 

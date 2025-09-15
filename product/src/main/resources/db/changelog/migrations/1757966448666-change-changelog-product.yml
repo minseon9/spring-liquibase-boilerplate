@@ -1,0 +1,27 @@
+databaseChangeLog:
+- changeSet:
+    id: 1757966451389-1
+    author: ian (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: productPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: name
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: price
+            type: numeric(38, 2)
+        tableName: product
+
