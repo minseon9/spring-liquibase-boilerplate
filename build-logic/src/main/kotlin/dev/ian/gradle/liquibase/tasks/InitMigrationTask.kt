@@ -14,6 +14,11 @@ abstract class InitMigrationTask : DefaultTask() {
 
     @TaskAction
     fun execute() {
+        if (targetModule == null) {
+            logger.error("module name을 입력해야합니다.(e.g. generateMigration -Pmodule=place")
+            return
+        }
+
         logger.lifecycle("Initializing module '$targetModule' Liquibase structure")
 
         val migrationsDir = File(migrationsPath)

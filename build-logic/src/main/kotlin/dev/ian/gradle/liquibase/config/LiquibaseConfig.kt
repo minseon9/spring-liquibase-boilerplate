@@ -20,8 +20,13 @@ object LiquibaseConfig {
         val context = LiquibaseProjectContext.create(project)
 
         registerLiquibaseActivity(project, context)
-        createInitMigrationTask(project, context)
-        createGenerateMigrationTask(project, context)
+
+        val targetModule = project.findProperty("module") as String?
+        if (targetModule != null) {
+            project.logger.info("[Liquibase Task] Registering migration tasks (initMigration, generateMigration)")
+            createInitMigrationTask(project, context, targetModule)
+            createGenerateMigrationTask(project, context, targetModule)
+        }
     }
 
     private fun registerLiquibaseActivity(
@@ -48,13 +53,14 @@ object LiquibaseConfig {
     private fun createInitMigrationTask(
         project: Project,
         context: LiquibaseProjectContext,
+        targetModule: String,
     ) {
         project.tasks.register<InitMigrationTask>("initMigration") {
             dependsOn("compileKotlin")
 
             group = "liquibase"
             description = "Initialize Liquibase migration"
-            this.targetModule = project.findProperty("module") as String?
+            this.targetModule = targetModule
             this.migrationsPath = context.pathResolver.getMigrationsAbsolutePath()
         }
     }
@@ -62,6 +68,7 @@ object LiquibaseConfig {
     private fun createGenerateMigrationTask(
         project: Project,
         context: LiquibaseProjectContext,
+        targetModule: String,
     ) {
         val timestamp = System.currentTimeMillis()
         val description =
@@ -77,7 +84,7 @@ object LiquibaseConfig {
             this.description = "Generate Liquibase migration from Hibernate entities"
             this.liquibaseClasspath = project.configurations.getByName("liquibaseRuntime")
             this.entityPackage = LiquibaseConstants.ENTITY_PACKAGE
-            this.targetModule = project.findProperty("module") as String?
+            this.targetModule = targetModule
             this.dbProps = context.dbProps
             this.changelogOutput = context.pathResolver.getMigrationOutputFileAbsolutePath(migrationFileName)
         }

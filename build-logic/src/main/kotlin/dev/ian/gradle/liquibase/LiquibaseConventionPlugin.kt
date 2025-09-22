@@ -28,17 +28,19 @@ class LiquibaseConventionPlugin : Plugin<Project> {
             add("liquibaseRuntime", libs.findLibrary("postgresql").get())
             add("liquibaseRuntime", libs.findLibrary("picocli").get())
 
-            val targetModule = project.findProperty("module") as String? ?: "main"
-            val targetProject = project.rootProject.project(":$targetModule")
-            targetProject.plugins.apply("java")
-            add(
-                "liquibaseRuntime",
-                targetProject.extensions
-                    .getByType<JavaPluginExtension>()
-                    .sourceSets
-                    .getByName("main")
-                    .runtimeClasspath,
-            )
+            val targetModule = project.findProperty("module") as String?
+            if (targetModule != null) {
+                val targetProject = project.rootProject.project(":$targetModule")
+                targetProject.plugins.apply("java")
+                add(
+                    "liquibaseRuntime",
+                    targetProject.extensions
+                        .getByType<JavaPluginExtension>()
+                        .sourceSets
+                        .getByName("main")
+                        .runtimeClasspath,
+                )
+            }
         }
 
         LiquibaseConfig.configureLiquibase(project)

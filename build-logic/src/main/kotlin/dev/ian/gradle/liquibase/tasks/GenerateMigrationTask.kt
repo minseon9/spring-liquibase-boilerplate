@@ -33,9 +33,12 @@ abstract class GenerateMigrationTask : DefaultTask() {
 
     @TaskAction
     fun execute() {
-        val module = targetModule ?: throw GradleException("targetModule is required")
+        if (targetModule == null) {
+            logger.error("module name을 입력해야합니다.(e.g. generateMigration -Pmodule=place")
+            return
+        }
         
-        val includeObjects = IncludeObjectResolver.getModuleIncludeObjects(project, module)
+        val includeObjects = IncludeObjectResolver.getModuleIncludeObjects(project, targetModule!!)
 
         val referenceUrl =
             "hibernate:spring:$entityPackage" +
@@ -64,9 +67,9 @@ abstract class GenerateMigrationTask : DefaultTask() {
                 }
 
             result.assertNormalExitValue()
-            logger.lifecycle("Liquibase diffChangeLog completed for module: $module")
+            logger.lifecycle("Liquibase diffChangeLog completed for module: $targetModule")
         } catch (e: Exception) {
-            logger.error("Liquibase diffChangeLog 실행 실패 (module=$module): ${e.message}")
+            logger.error("Liquibase diffChangeLog 실행 실패 (module=$targetModule): ${e.message}")
             throw GradleException("Liquibase diffChangeLog 실행 실패", e)
         }
     }
