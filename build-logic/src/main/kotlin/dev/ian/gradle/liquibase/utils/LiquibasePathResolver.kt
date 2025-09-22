@@ -10,7 +10,7 @@ class LiquibasePathResolver(
     fun getChangeLogFilePath(): String = LiquibaseConstants.SCHEMA_CHANGELOG
 
     fun getMigrationsAbsolutePath(): String {
-        val module = project.findProperty("module") as String? ?: "main"
+        val module = project.findProperty("module") as String
         return project.rootProject.file("$module/${LiquibaseConstants.MIGRATIONS_DIR}").absolutePath
     }
 
@@ -23,8 +23,10 @@ class LiquibasePathResolver(
         timestamp: Long,
         description: String,
     ): String {
-        val module = project.findProperty("module") as String? ?: "main"
-        return "$timestamp-$description-changelog-$module.yml"
+        val module = project.findProperty("module") as String
+
+        val fileFormat = project.findProperty(LiquibaseConstants.MIGRATION_FILE_FORMAT) as String? ?: "yml"
+        return "$timestamp-$description-changelog-$module.$fileFormat"
     }
 
     fun getSearchPaths(): String = project.rootProject.projectDir.absolutePath
