@@ -15,7 +15,7 @@ abstract class InitMigrationTask : DefaultTask() {
     @TaskAction
     fun execute() {
         if (targetModule == null) {
-            logger.error("module name을 입력해야합니다.(e.g. generateMigration -Pmodule=place")
+            logger.error("[Liquibase Task] module name을 입력해야합니다. (e.g. generateMigration -Pmodule=place")
             return
         }
 
@@ -29,6 +29,6 @@ abstract class InitMigrationTask : DefaultTask() {
 
         MigrationPathAppender.appendIncludeAll(schemaChangelogPath, modulePath, logger)
 
-        logger.lifecycle("Added includeAll for module '$targetModule' to schema changelog")
+        logger.lifecycle("[Liquibase Task] '$targetModule'의 경로를 schema changelog 추가했습니다.")
     }
 }
